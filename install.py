@@ -381,11 +381,15 @@ def install_system_dependencies():
         # Try to install OpenGL libraries
         # Note: Package names changed in Ubuntu 24.04+
         # Old: libgl1-mesa-glx (pre-24.04)
-        # New: libgl1, libglx-mesa0 (24.04+)
-        packages = ["libgl1", "libglu1-mesa", "libglx-mesa0", "libosmesa6"]
+        # New: libgl1, libglx-mesa0, libopengl0 (24.04+)
+        packages = ["libgl1", "libopengl0", "libglu1-mesa", "libglx-mesa0", "libosmesa6"]
 
         if is_root:
             print(f"[Install] Installing OpenGL libraries: {', '.join(packages)}")
+            # Update apt cache first
+            print("[Install] Updating apt cache...")
+            subprocess.run(['apt-get', 'update'], capture_output=True, timeout=120)
+
             result = subprocess.run(
                 ['apt-get', 'install', '-y'] + packages,
                 capture_output=True,
@@ -414,7 +418,7 @@ def install_system_dependencies():
     except Exception as e:
         print(f"[Install] Warning: Could not install system dependencies: {e}")
         print(f"[Install] PyMeshLab remeshing may not work without OpenGL libraries.")
-        print(f"[Install] To fix, run: sudo apt-get install libgl1 libglu1-mesa libglx-mesa0 libosmesa6")
+        print(f"[Install] To fix, run: sudo apt-get update && sudo apt-get install libgl1 libopengl0 libglu1-mesa libglx-mesa0 libosmesa6")
         return True  # Don't fail installation, just warn
 
 
