@@ -16,6 +16,7 @@ from . import transforms
 from . import visualization
 from . import skeleton
 from . import examples
+from . import texture_remeshing
 
 # Collect all node class mappings
 NODE_CLASS_MAPPINGS = {}
@@ -31,6 +32,7 @@ NODE_CLASS_MAPPINGS.update(transforms.NODE_CLASS_MAPPINGS)
 NODE_CLASS_MAPPINGS.update(visualization.NODE_CLASS_MAPPINGS)
 NODE_CLASS_MAPPINGS.update(skeleton.NODE_CLASS_MAPPINGS)
 NODE_CLASS_MAPPINGS.update(examples.NODE_CLASS_MAPPINGS)
+NODE_CLASS_MAPPINGS.update(texture_remeshing.NODE_CLASS_MAPPINGS)
 
 # Collect all display name mappings
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -46,6 +48,7 @@ NODE_DISPLAY_NAME_MAPPINGS.update(transforms.NODE_DISPLAY_NAME_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(visualization.NODE_DISPLAY_NAME_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(skeleton.NODE_DISPLAY_NAME_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(examples.NODE_DISPLAY_NAME_MAPPINGS)
+NODE_DISPLAY_NAME_MAPPINGS.update(texture_remeshing.NODE_DISPLAY_NAME_MAPPINGS)
 
 # Export for ComfyUI
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
