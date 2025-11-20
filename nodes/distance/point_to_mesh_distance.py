@@ -7,55 +7,70 @@ import numpy as np
 
 class PointToMeshDistanceNode:
     """
-    Point to Mesh Distance - Compute distance from a point to nearest mesh surface.
+    Point to Mesh Distance - Compute distance field from point cloud/mesh to target mesh surface.
 
-    For each point in a point cloud, finds the closest point on the mesh surface
-    and computes the distance. Returns both the distance values and statistics.
-    Useful for proximity analysis and error measurements.
+    For each vertex in the input (point cloud or mesh), finds the closest point on the
+    target mesh surface and computes the distance. Returns the input geometry with a
+    'distance' field added to vertex_attributes.
+
+    Useful for proximity analysis, error measurements, and distance-based visualizations.
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "trimesh": ("TRIMESH",),
-                "point_cloud": ("POINT_CLOUD",),
-            },
-            "optional": {
-                "return_closest_points": (["true", "false"], {"default": "false"}),
+                "target_mesh": ("TRIMESH",),
+                "pointcloud": ("TRIMESH",),
             }
         }
 
-    RETURN_TYPES = ("FLOAT", "FLOAT", "FLOAT", "STRING")
-    RETURN_NAMES = ("min_distance", "max_distance", "mean_distance", "info")
+    RETURN_TYPES = ("TRIMESH", "STRING")
+    RETURN_NAMES = ("pointcloud", "info")
     FUNCTION = "compute_distance"
     CATEGORY = "geompack/distance"
 
-    def compute_distance(self, trimesh, point_cloud, return_closest_points="false"):
+    def compute_distance(self, target_mesh, pointcloud):
         """
-        Compute distances from points to mesh surface.
+        Compute distances from point cloud/mesh vertices to target mesh surface.
 
         Args:
-            trimesh: Input trimesh.Trimesh object
-            point_cloud: Point cloud dictionary with 'points' array
-            return_closest_points: Whether to compute closest surface points
+            target_mesh: Target trimesh.Trimesh object to measure distance to
+            pointcloud: Input point cloud or mesh (TRIMESH) to compute distances for
 
         Returns:
-            tuple: (min_distance, max_distance, mean_distance, info_string)
+            tuple: (pointcloud_with_distance_field, info_string)
         """
-        # Extract points from point cloud
-        if isinstance(point_cloud, dict):
-            points = point_cloud['points']
-        else:
-            points = point_cloud
+        # Extract vertices from input (works for both mesh and point cloud)
+        points = pointcloud.vertices
 
-        print(f"[PointToMeshDistance] Computing distances for {len(points):,} points to mesh")
-        print(f"[PointToMeshDistance] Mesh: {len(trimesh.vertices):,} vertices, {len(trimesh.faces):,} faces")
+        # Determine if input is a mesh or point cloud
+        is_mesh = len(pointcloud.faces) > 0
+        input_type = "Mesh" if is_mesh else "Point Cloud"
+
+        print(f"[PointToMeshDistance] Computing distances for {len(points):,} points")
+        print(f"[PointToMeshDistance] Input: {input_type}")
+        print(f"[PointToMeshDistance] Target Mesh: {len(target_mesh.vertices):,} vertices, {len(target_mesh.faces):,} faces")
 
         # Use trimesh's proximity query to find closest points and distances
-        closest_points, distances, triangle_ids = trimesh.nearest.on_surface(points)
+        closest_points, distances, triangle_ids = target_mesh.nearest.on_surface(points)
 
-        # Compute statistics
+        # Create a copy of the input to add distance field
+        result = pointcloud.copy()
+
+        # Add distance field to vertex attributes
+        result.vertex_attributes['distance'] = distances.astype(np.float32)
+
+        # Add metadata
+        if not hasattr(result, 'metadata') or result.metadata is None:
+            result.metadata = {}
+
+        result.metadata['has_distance_field'] = True
+        result.metadata['target_mesh_vertices'] = len(target_mesh.vertices)
+        result.metadata['target_mesh_faces'] = len(target_mesh.faces)
+        result.metadata['num_points'] = len(points)
+
+        # Compute statistics for info string
         min_dist = float(np.min(distances))
         max_dist = float(np.max(distances))
         mean_dist = float(np.mean(distances))
@@ -72,11 +87,11 @@ class PointToMeshDistanceNode:
         threshold_05 = np.sum(distances < 0.5)
         threshold_10 = np.sum(distances < 1.0)
 
-        info = f"""Point to Mesh Distance Analysis:
+        info = f"""Point to Mesh Distance Field:
 
 Input:
-  Point Cloud: {len(points):,} points
-  Mesh: {len(trimesh.vertices):,} vertices, {len(trimesh.faces):,} faces
+  {input_type}: {len(points):,} {'vertices' if is_mesh else 'points'}
+  Target Mesh: {len(target_mesh.vertices):,} vertices, {len(target_mesh.faces):,} faces
 
 Distance Statistics:
   Minimum: {min_dist:.6f}
@@ -95,13 +110,13 @@ Distance Distribution:
   < 0.5: {threshold_05:,} points ({100.0 * threshold_05 / len(points):.1f}%)
   < 1.0: {threshold_10:,} points ({100.0 * threshold_10 / len(points):.1f}%)
 
-Note: Distances are computed as Euclidean distance from each point
-to the nearest point on the mesh surface.
+Output: {input_type} with 'distance' field in vertex_attributes
 """
 
         print(f"[PointToMeshDistance] Min: {min_dist:.6f}, Max: {max_dist:.6f}, Mean: {mean_dist:.6f}")
+        print(f"[PointToMeshDistance] Distance field added to vertex_attributes['distance']")
 
-        return (min_dist, max_dist, mean_dist, info)
+        return (result, info)
 
 
 # Node mappings

@@ -1,8 +1,8 @@
 {
   "id": "ecdb61a5-195b-4c1c-b3d9-08e897cdf20b",
   "revision": 0,
-  "last_node_id": 6,
-  "last_link_id": 5,
+  "last_node_id": 10,
+  "last_link_id": 11,
   "nodes": [
     {
       "id": 3,
@@ -13,7 +13,7 @@
       ],
       "size": [
         270,
-        58
+        78
       ],
       "flags": {},
       "order": 0,
@@ -24,9 +24,15 @@
           "name": "mesh",
           "type": "TRIMESH",
           "links": [
-            1,
-            2,
-            5
+            7,
+            11
+          ]
+        },
+        {
+          "name": "texture",
+          "type": "IMAGE",
+          "links": [
+            10
           ]
         }
       ],
@@ -40,99 +46,14 @@
       ]
     },
     {
-      "id": 1,
-      "type": "GeomPackXAtlasRemeshWithTexture",
-      "pos": [
-        257.4715918743474,
-        259.232166883559
-      ],
-      "size": [
-        272.63046875,
-        146
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "trimesh",
-          "type": "TRIMESH",
-          "link": 2
-        }
-      ],
-      "outputs": [
-        {
-          "name": "remeshed_mesh",
-          "type": "TRIMESH",
-          "links": [
-            3
-          ]
-        },
-        {
-          "name": "transferred_texture",
-          "type": "IMAGE",
-          "links": null
-        },
-        {
-          "name": "info",
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-geometrypack",
-        "ver": "6d317434425ba8f2c60d04a4b19d3fb67ef4b099",
-        "Node name for S&R": "GeomPackXAtlasRemeshWithTexture"
-      },
-      "widgets_values": [
-        "blender",
-        "quadriflow",
-        0.05,
-        5000,
-        1024,
-        16
-      ]
-    },
-    {
-      "id": 4,
-      "type": "GeomPackPreviewMesh",
-      "pos": [
-        648.6504121868477,
-        374.41565907105905
-      ],
-      "size": [
-        512,
-        542
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "trimesh",
-          "type": "TRIMESH",
-          "link": 3
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfyui-geometrypack",
-        "ver": "6d317434425ba8f2c60d04a4b19d3fb67ef4b099",
-        "Node name for S&R": "GeomPackPreviewMesh"
-      },
-      "widgets_values": [
-        ""
-      ]
-    },
-    {
-      "id": 2,
+      "id": 7,
       "type": "GeomPackBlenderRemeshWithTexture",
       "pos": [
-        282.68780281184735,
-        2.8846864148090106
+        216.85529499934756,
+        107.00944032105886
       ],
       "size": [
-        282.761328125,
+        270,
         194
       ],
       "flags": {},
@@ -142,7 +63,7 @@
         {
           "name": "trimesh",
           "type": "TRIMESH",
-          "link": 1
+          "link": 7
         }
       ],
       "outputs": [
@@ -150,13 +71,15 @@
           "name": "remeshed_mesh",
           "type": "TRIMESH",
           "links": [
-            4
+            8
           ]
         },
         {
           "name": "baked_texture",
           "type": "IMAGE",
-          "links": null
+          "links": [
+            9
+          ]
         },
         {
           "name": "info",
@@ -166,7 +89,7 @@
       ],
       "properties": {
         "cnr_id": "comfyui-geometrypack",
-        "ver": "6d317434425ba8f2c60d04a4b19d3fb67ef4b099",
+        "ver": "965ab7207dc46106186002dd5cbc20dd260e815a",
         "Node name for S&R": "GeomPackBlenderRemeshWithTexture"
       },
       "widgets_values": [
@@ -174,8 +97,7 @@
         "quadriflow",
         0.05,
         5000,
-        2048,
-        16
+        48
       ]
     },
     {
@@ -196,7 +118,7 @@
         {
           "name": "trimesh",
           "type": "TRIMESH",
-          "link": 4
+          "link": 8
         }
       ],
       "outputs": [],
@@ -210,24 +132,82 @@
       ]
     },
     {
-      "id": 6,
-      "type": "GeomPackPreviewMesh",
+      "id": 8,
+      "type": "PreviewImage",
       "pos": [
-        -234.1353378131526,
-        575.6462215710587
+        -142.51470500065253,
+        482.35144032105904
       ],
       "size": [
-        512,
-        542
+        140,
+        246
       ],
       "flags": {},
       "order": 3,
       "mode": 0,
       "inputs": [
         {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 10
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.70",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "type": "PreviewImage",
+      "pos": [
+        628.1342949993478,
+        443.752440321059
+      ],
+      "size": [
+        140,
+        246
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 9
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.70",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 10,
+      "type": "GeomPackPreviewMesh",
+      "pos": [
+        55.80429499934765,
+        366.554440321059
+      ],
+      "size": [
+        512,
+        542
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
           "name": "trimesh",
           "type": "TRIMESH",
-          "link": 5
+          "link": 11
         }
       ],
       "outputs": [],
@@ -243,42 +223,42 @@
   ],
   "links": [
     [
-      1,
+      7,
       3,
       0,
-      2,
+      7,
       0,
       "TRIMESH"
     ],
     [
-      2,
-      3,
-      0,
-      1,
-      0,
-      "TRIMESH"
-    ],
-    [
-      3,
-      1,
-      0,
-      4,
-      0,
-      "TRIMESH"
-    ],
-    [
-      4,
-      2,
+      8,
+      7,
       0,
       5,
       0,
       "TRIMESH"
     ],
     [
-      5,
+      9,
+      7,
+      1,
+      9,
+      0,
+      "IMAGE"
+    ],
+    [
+      10,
+      3,
+      1,
+      8,
+      0,
+      "IMAGE"
+    ],
+    [
+      11,
       3,
       0,
-      6,
+      10,
       0,
       "TRIMESH"
     ]
@@ -289,8 +269,8 @@
     "ds": {
       "scale": 0.7513148009015777,
       "offset": [
-        568.4347050006525,
-        289.6285596789411
+        867.9097050006526,
+        184.479559678941
       ]
     },
     "frontendVersion": "1.28.8"

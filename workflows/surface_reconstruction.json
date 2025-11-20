@@ -1,8 +1,8 @@
 {
   "id": "58a80d52-612a-405e-b687-4696702fb5a6",
   "revision": 1,
-  "last_node_id": 22,
-  "last_link_id": 26,
+  "last_node_id": 23,
+  "last_link_id": 28,
   "nodes": [
     {
       "id": 20,
@@ -54,7 +54,7 @@
         106
       ],
       "flags": {},
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "inputs": [
         {
@@ -66,8 +66,10 @@
       "outputs": [
         {
           "name": "point_cloud",
-          "type": "POINT_CLOUD",
-          "links": null
+          "type": "TRIMESH",
+          "links": [
+            27
+          ]
         }
       ],
       "properties": {
@@ -85,28 +87,30 @@
       "id": 22,
       "type": "GeomPackReconstructSurface",
       "pos": [
-        159.17866280668989,
-        -50.299231937612745
+        118.8894066083429,
+        -56.497579045050756
       ],
       "size": [
         270,
         222
       ],
       "flags": {},
-      "order": 1,
+      "order": 2,
       "mode": 0,
       "inputs": [
         {
           "name": "points",
           "type": "TRIMESH",
-          "link": null
+          "link": 27
         }
       ],
       "outputs": [
         {
           "name": "reconstructed_mesh",
           "type": "TRIMESH",
-          "links": null
+          "links": [
+            28
+          ]
         },
         {
           "name": "info",
@@ -128,6 +132,37 @@
         "true",
         0.1
       ]
+    },
+    {
+      "id": 23,
+      "type": "GeomPackPreviewMeshVTK",
+      "pos": [
+        457.5427188500778,
+        -65.4036676297615
+      ],
+      "size": [
+        512,
+        670
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "trimesh",
+          "type": "TRIMESH",
+          "link": 28
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfyui-geometrypack",
+        "ver": "965ab7207dc46106186002dd5cbc20dd260e815a",
+        "Node name for S&R": "GeomPackPreviewMeshVTK"
+      },
+      "widgets_values": [
+        ""
+      ]
     }
   ],
   "links": [
@@ -138,6 +173,22 @@
       21,
       0,
       "TRIMESH"
+    ],
+    [
+      27,
+      21,
+      0,
+      22,
+      0,
+      "TRIMESH"
+    ],
+    [
+      28,
+      22,
+      0,
+      23,
+      0,
+      "TRIMESH"
     ]
   ],
   "groups": [],
@@ -146,8 +197,8 @@
     "ds": {
       "scale": 0.9680000000000015,
       "offset": [
-        897.8291819763664,
-        248.2549072991827
+        843.7692646209948,
+        242.97598167934805
       ]
     },
     "frontendVersion": "1.28.8"

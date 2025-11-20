@@ -73,11 +73,10 @@ SPLITS = [
         ("ReconstructSurfaceNode", "reconstruct_surface.py", "Reconstruct Surface"),
     ]),
 
-    # 9. skeleton/ - 3 nodes
+    # 9. skeleton/ - 2 nodes
     ("skeleton.py", "skeleton", [
         ("ExtractSkeleton", "extract_skeleton.py", "Extract Skeleton"),
         ("SkeletonToTrimesh", "mesh_from_skeleton.py", "Skeleton to Lines"),
-        ("SkeletonToMesh", "visualize_skeleton.py", "Skeleton to Mesh"),
     ]),
 
     # 10. texture_remeshing/ - 2 nodes
