@@ -220,16 +220,12 @@
         let mesh1Bounds, mesh2Bounds, combinedBounds;
         let fieldNames1 = [], fieldNames2 = [], commonFields = [];
 
-        console.log('[GeomPack VTK Dual Viewer DEBUG] Initial state - isInitialized:', isInitialized);
-
         // Helper function to render with proper clipping range update (double RAF pattern)
         function renderWithClippingRangeUpdate(renderer, renderWindow) {
-            console.log('[GeomPack VTK Dual Viewer DEBUG] renderWithClippingRangeUpdate called');
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     renderer.resetCameraClippingRange();
                     renderWindow.render();
-                    console.log('[GeomPack VTK Dual Viewer DEBUG] Render complete');
                 });
             });
         }
@@ -238,11 +234,8 @@
         function initSideBySide() {
             // Guard: prevent double initialization
             if (leftFullScreenRenderer) {
-                console.log('[GeomPack VTK Dual Viewer DEBUG] Side-by-side already initialized, skipping');
                 return;
             }
-
-            console.log('[GeomPack VTK Dual Viewer DEBUG] Initializing side-by-side layout');
             const leftContainer = document.getElementById('leftContainer');
             const rightContainer = document.getElementById('rightContainer');
 
@@ -301,11 +294,8 @@
         function initOverlay() {
             // Guard: prevent double initialization
             if (singleFullScreenRenderer) {
-                console.log('[GeomPack VTK Dual Viewer DEBUG] Overlay already initialized, skipping');
                 return;
             }
-
-            console.log('[GeomPack VTK Dual Viewer DEBUG] Initializing overlay layout');
             const singleContainer = document.getElementById('singleContainer');
 
             singleFullScreenRenderer = vtkFullScreenRenderWindow.newInstance({
@@ -477,18 +467,13 @@
                         const cellData = polydata.getCellData();
                         const fields = [];
 
-                        console.log(`[GeomPack VTK Dual Viewer DEBUG] Mesh ${isMesh1 ? '1' : '2'} field arrays:`);
                         for (let i = 0; i < pointData.getNumberOfArrays(); i++) {
                             const array = pointData.getArray(i);
-                            const fieldName = array.getName();
-                            fields.push(fieldName);
-                            console.log(`  - vertex field "${fieldName}": range ${array.getRange()}, ${array.getNumberOfTuples()} values`);
+                            fields.push(array.getName());
                         }
                         for (let i = 0; i < cellData.getNumberOfArrays(); i++) {
                             const array = cellData.getArray(i);
-                            const fieldName = `face.${array.getName()}`;
-                            fields.push(fieldName);
-                            console.log(`  - face field "${array.getName()}": range ${array.getRange()}, ${array.getNumberOfTuples()} values`);
+                            fields.push(`face.${array.getName()}`);
                         }
 
                         if (isMesh1) {
@@ -496,8 +481,6 @@
                         } else {
                             fieldNames2 = fields;
                         }
-
-                        console.log(`[GeomPack VTK Dual Viewer] Mesh ${isMesh1 ? '1' : '2'} fields:`, fields);
                     }
 
                     // Set up pipeline
@@ -584,71 +567,30 @@
 
             if (scalarArray) {
                 const range = scalarArray.getRange();
-                const [min, max] = sharedRange || range;  // Use shared range if provided
-                const numValues = scalarArray.getNumberOfTuples();
-                const numComponents = scalarArray.getNumberOfComponents();
+                const [min, max] = sharedRange || range;
 
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Field "${fieldName}":`, {
-                    range: [min, max],
-                    numValues,
-                    numComponents,
-                    dataType: scalarArray.getDataType()
-                });
-
-                // Sample some values to debug
-                if (numValues > 0) {
-                    const samples = [];
-                    const sampleIndices = [0, Math.floor(numValues / 2), numValues - 1];
-                    sampleIndices.forEach(idx => {
-                        if (idx < numValues) {
-                            samples.push(scalarArray.getTuple(idx));
-                        }
-                    });
-                    console.log(`[GeomPack VTK Dual Viewer DEBUG] Sample values at [0, middle, end]:`, samples);
-                }
-
-                // Check for degenerate range (all values are the same)
-                // BUT: if a shared range is provided (synchronized mode), don't disable!
+                // Check for degenerate range - if shared range provided (synchronized mode), don't disable
                 const epsilon = 1e-10;
                 const isDegenerate = Math.abs(max - min) < epsilon;
 
                 if (isDegenerate && !sharedRange) {
-                    console.warn(`[GeomPack VTK Dual Viewer] Field "${fieldName}" has zero-width range [${min}, ${max}] - all values are identical. Disabling field visualization.`);
+                    console.warn(`[GeomPack VTK Dual Viewer] Field "${fieldName}" has zero-width range [${min}, ${max}] - disabling visualization.`);
                     mapper.setScalarVisibility(false);
                     return;
-                } else if (isDegenerate && sharedRange) {
-                    console.log(`[GeomPack VTK Dual Viewer DEBUG] Field "${fieldName}" has degenerate local range [${range[0]}, ${range[1]}] but using shared range [${min}, ${max}]`);
                 }
 
                 data.setActiveScalars(actualFieldName);
                 mapper.setScalarVisibility(true);
 
-                // Debug: Check if methods exist
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Mapper has setScalarModeToUsePointData: ${typeof mapper.setScalarModeToUsePointData}`);
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Mapper has setScalarModeToUseCellData: ${typeof mapper.setScalarModeToUseCellData}`);
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Mode BEFORE setting: ${mapper.getScalarMode()}`);
-
-                // Use named methods instead of numeric constants to properly trigger VTK.js scalar visualization
                 if (isCellData) {
-                    console.log(`[GeomPack VTK Dual Viewer DEBUG] Calling setScalarModeToUseCellData()`);
                     mapper.setScalarModeToUseCellData();
                 } else {
-                    console.log(`[GeomPack VTK Dual Viewer DEBUG] Calling setScalarModeToUsePointData()`);
                     mapper.setScalarModeToUsePointData();
                 }
 
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Mode AFTER setting: ${mapper.getScalarMode()}`);
                 mapper.setScalarRange(min, max);
 
-                const beforeState = {
-                    scalarVisibility: mapper.getScalarVisibility(),
-                    scalarMode: mapper.getScalarMode(),
-                    scalarRange: mapper.getScalarRange(),
-                    hasLookupTable: !!mapper.getLookupTable()
-                };
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Mapper BEFORE colormap - scalarVisibility:${beforeState.scalarVisibility}, mode:${beforeState.scalarMode} (${isCellData ? 'UseCellData' : 'UsePointData'}), range:[${beforeState.scalarRange}], hasLUT:${beforeState.hasLookupTable}`);
-
-                // Apply colormap safely
+                // Apply colormap
                 try {
                     const colormapName = document.getElementById('colormapSelector')?.value || 'erdc_rainbow_bright';
                     const lookupTable = vtkColorTransferFunction.newInstance();
@@ -659,17 +601,6 @@
                         lookupTable.setMappingRange(min, max);
                         lookupTable.updateRange();
                         mapper.setLookupTable(lookupTable);
-                        console.log(`[GeomPack VTK Dual Viewer] Applied field: ${fieldName}, range: [${min}, ${max}], colormap: ${colormapName}`);
-
-                        // Verify mapper state after colormap application
-                        const afterState = {
-                            scalarVisibility: mapper.getScalarVisibility(),
-                            scalarMode: mapper.getScalarMode(),
-                            scalarRange: mapper.getScalarRange(),
-                            hasLookupTable: !!mapper.getLookupTable(),
-                            lookupTableRange: lookupTable.getMappingRange()
-                        };
-                        console.log(`[GeomPack VTK Dual Viewer DEBUG] Mapper AFTER colormap - scalarVisibility:${afterState.scalarVisibility}, mode:${afterState.scalarMode}, range:[${afterState.scalarRange}], hasLUT:${afterState.hasLookupTable}, lutRange:[${afterState.lookupTableRange}]`);
                     } else {
                         console.error(`[GeomPack VTK Dual Viewer] Colormap preset "${colormapName}" not found`);
                     }
@@ -677,9 +608,7 @@
                     console.error(`[GeomPack VTK Dual Viewer] Error applying colormap:`, error);
                 }
 
-                // Force mapper update after field application
                 mapper.update();
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Mapper updated after field application`);
             } else {
                 console.warn(`[GeomPack VTK Dual Viewer] Field "${fieldName}" not found in polydata`);
             }
@@ -690,9 +619,18 @@
             const selector = document.getElementById('colormapSelector');
             if (!selector) return;
 
+            // Only include VTK.js presets that are confirmed to exist
             const presets = [
-                'erdc_rainbow_bright', 'Viridis', 'Plasma', 'Inferno', 'Cool to Warm',
-                'Blue to Red Rainbow', 'X Ray', 'jet', 'hsv', 'hot', 'cool'
+                'erdc_rainbow_bright',
+                'Cool to Warm',
+                'Blue to Red Rainbow',
+                'X Ray',
+                'jet',
+                'hsv',
+                'hot',
+                'cool',
+                'rainbow',
+                'grayscale'
             ];
 
             selector.innerHTML = '';
@@ -740,8 +678,6 @@
             const currentField1 = field1Selector?.value || 'none';
             const currentField2 = field2Selector?.value || 'none';
             const currentSharedField = sharedFieldSelector?.value || 'none';
-
-            console.log('[GeomPack VTK Dual Viewer DEBUG] Preserving field selections:', currentField1, currentField2, currentSharedField);
 
             if (field1Selector) {
                 field1Selector.innerHTML = '<option value="none">None</option>';
@@ -791,24 +727,8 @@
 
         // Listen for messages from parent window
         window.addEventListener('message', async (event) => {
-            console.log('[GeomPack VTK Dual Viewer] Received message:', event.data);
-
             if (event.data.type === 'LOAD_DUAL_MESH') {
                 const data = event.data;
-
-                // Debug logging
-                console.log('[GeomPack VTK Dual Viewer DEBUG] Current layout:', viewerLayout);
-                console.log('[GeomPack VTK Dual Viewer DEBUG] New layout:', data.layout);
-                console.log('[GeomPack VTK Dual Viewer DEBUG] isInitialized:', isInitialized);
-                console.log('[GeomPack VTK Dual Viewer DEBUG] leftFullScreenRenderer exists:', !!leftFullScreenRenderer);
-                console.log('[GeomPack VTK Dual Viewer DEBUG] singleFullScreenRenderer exists:', !!singleFullScreenRenderer);
-
-                // Check if we need to reinitialize (layout change)
-                const layoutChanged = isInitialized && viewerLayout !== data.layout;
-                if (layoutChanged) {
-                    console.log('[GeomPack VTK Dual Viewer DEBUG] Layout changed, would need cleanup (not implemented yet)');
-                    // TODO: Add cleanup logic when switching layouts
-                }
 
                 viewerLayout = data.layout;
 
@@ -818,31 +738,22 @@
                 try {
                     if (viewerLayout === 'side_by_side') {
                         // Side-by-side mode
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Activating side-by-side container');
                         sideBySideContainer.classList.add('active');
                         overlayContainer.classList.remove('active');
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Side-by-side active?', sideBySideContainer.classList.contains('active'));
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Overlay active?', overlayContainer.classList.contains('active'));
                         initSideBySide();
 
                         // Check if meshes have changed before reloading
                         const mesh1Changed = currentMesh1Path !== data.mesh1Filepath;
                         const mesh2Changed = currentMesh2Path !== data.mesh2Filepath;
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Mesh 1 changed?', mesh1Changed);
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Mesh 2 changed?', mesh2Changed);
 
                         if (mesh1Changed || !leftPolydata) {
                             await loadMesh(data.mesh1Filepath, leftMapper, true);
                             currentMesh1Path = data.mesh1Filepath;
-                        } else {
-                            console.log('[GeomPack VTK Dual Viewer DEBUG] Skipping mesh 1 reload (unchanged)');
                         }
 
                         if (mesh2Changed || !rightPolydata) {
                             await loadMesh(data.mesh2Filepath, rightMapper, false);
                             currentMesh2Path = data.mesh2Filepath;
-                        } else {
-                            console.log('[GeomPack VTK Dual Viewer DEBUG] Skipping mesh 2 reload (unchanged)');
                         }
 
                         updateCombinedBounds();
@@ -857,22 +768,16 @@
 
                     } else {
                         // Overlay mode
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Activating overlay container');
                         sideBySideContainer.classList.remove('active');
                         overlayContainer.classList.add('active');
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Side-by-side active?', sideBySideContainer.classList.contains('active'));
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Overlay active?', overlayContainer.classList.contains('active'));
                         initOverlay();
 
                         // Check if mesh has changed before reloading
                         const meshChanged = currentMeshPath !== data.meshFilepath;
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Mesh changed?', meshChanged);
 
                         if (meshChanged || !singlePolydata) {
                             await loadMesh(data.meshFilepath, singleMapper, true);
                             currentMeshPath = data.meshFilepath;
-                        } else {
-                            console.log('[GeomPack VTK Dual Viewer DEBUG] Skipping mesh reload (unchanged)');
                         }
 
                         updateCombinedBounds();
@@ -886,13 +791,11 @@
 
                     // Re-apply field visualization after populating selectors
                     const fieldMode = document.getElementById('fieldMode')?.value || 'synchronized';
-                    console.log('[GeomPack VTK Dual Viewer DEBUG] Re-applying field mode:', fieldMode);
 
                     if (viewerLayout === 'side_by_side') {
                         if (fieldMode === 'independent') {
                             const field1 = document.getElementById('field1Selector')?.value;
                             const field2 = document.getElementById('field2Selector')?.value;
-                            console.log('[GeomPack VTK Dual Viewer DEBUG] Re-applying independent fields:', field1, field2);
                             if (field1 && field1 !== 'none' && leftPolydata) {
                                 applyFieldToMapper(leftMapper, leftPolydata, field1);
                             }
@@ -901,7 +804,6 @@
                             }
                         } else if (fieldMode === 'synchronized') {
                             const sharedField = document.getElementById('sharedFieldSelector')?.value;
-                            console.log('[GeomPack VTK Dual Viewer DEBUG] Re-applying synchronized field:', sharedField);
                             if (sharedField && sharedField !== 'none') {
                                 // Calculate shared range from both meshes
                                 let sharedRange = null;
@@ -919,7 +821,6 @@
                                         const [leftMin, leftMax] = leftArray.getRange();
                                         const [rightMin, rightMax] = rightArray.getRange();
                                         sharedRange = [Math.min(leftMin, rightMin), Math.max(leftMax, rightMax)];
-                                        console.log(`[GeomPack VTK Dual Viewer DEBUG] Calculated shared range: [${sharedRange}] from left:[${leftMin},${leftMax}] right:[${rightMin},${rightMax}]`);
                                     }
                                 }
 
@@ -928,41 +829,15 @@
                             }
                         }
 
-                        // Debug: check actor and mapper state after field application
-                        console.log('[GeomPack VTK Dual Viewer DEBUG] Actor & Mapper state after field application:');
-                        if (leftActor && leftMapper) {
-                            const leftColor = leftActor.getProperty().getColor();
-                            const leftOpacity = leftActor.getProperty().getOpacity();
-                            const leftScalarRange = leftMapper.getScalarRange();
-                            console.log(`[GeomPack VTK Dual Viewer DEBUG] Left Actor - visible:${leftActor.getVisibility()}, hasMapper:${!!leftActor.getMapper()}, scalarVis:${leftMapper.getScalarVisibility()}, scalarMode:${leftMapper.getScalarMode()}, scalarRange:[${leftScalarRange}], hasLUT:${!!leftMapper.getLookupTable()}, color:[${leftColor}], opacity:${leftOpacity}`);
-                        }
-                        if (rightActor && rightMapper) {
-                            const rightColor = rightActor.getProperty().getColor();
-                            const rightOpacity = rightActor.getProperty().getOpacity();
-                            const rightScalarRange = rightMapper.getScalarRange();
-                            console.log(`[GeomPack VTK Dual Viewer DEBUG] Right Actor - visible:${rightActor.getVisibility()}, hasMapper:${!!rightActor.getMapper()}, scalarVis:${rightMapper.getScalarVisibility()}, scalarMode:${rightMapper.getScalarMode()}, scalarRange:[${rightScalarRange}], hasLUT:${!!rightMapper.getLookupTable()}, color:[${rightColor}], opacity:${rightOpacity}`);
-                        }
-
                         // Re-render both viewports
                         if (leftRenderWindow && rightRenderWindow) {
-                            console.log('[GeomPack VTK Dual Viewer DEBUG] Triggering re-render of both viewports');
-
-                            // Final check: verify mapper state hasn't been reset before render
-                            console.log(`[GeomPack VTK Dual Viewer DEBUG] Final check before render - Left scalarVis:${leftMapper.getScalarVisibility()}, Right scalarVis:${rightMapper.getScalarVisibility()}`);
-
                             renderWithClippingRangeUpdate(leftRenderer, leftRenderWindow);
                             renderWithClippingRangeUpdate(rightRenderer, rightRenderWindow);
-
-                            // Check again after render
-                            setTimeout(() => {
-                                console.log(`[GeomPack VTK Dual Viewer DEBUG] After render - Left scalarVis:${leftMapper.getScalarVisibility()}, Right scalarVis:${rightMapper.getScalarVisibility()}`);
-                            }, 100);
                         }
                     }
 
                     // Mark as initialized
                     isInitialized = true;
-                    console.log('[GeomPack VTK Dual Viewer DEBUG] isInitialized set to true');
 
                     loading.style.display = 'none';
                     console.log('[GeomPack VTK Dual Viewer] Meshes loaded successfully');
@@ -1024,7 +899,6 @@
 
         // Field selection
         document.getElementById('field1Selector')?.addEventListener('change', (e) => {
-            console.log('[GeomPack VTK Dual Viewer DEBUG] field1Selector changed to:', e.target.value);
             if (leftPolydata) {
                 applyFieldToMapper(leftMapper, leftPolydata, e.target.value);
                 renderWithClippingRangeUpdate(leftRenderer, leftRenderWindow);
@@ -1032,7 +906,6 @@
         });
 
         document.getElementById('field2Selector')?.addEventListener('change', (e) => {
-            console.log('[GeomPack VTK Dual Viewer DEBUG] field2Selector changed to:', e.target.value);
             if (rightPolydata) {
                 applyFieldToMapper(rightMapper, rightPolydata, e.target.value);
                 renderWithClippingRangeUpdate(rightRenderer, rightRenderWindow);
@@ -1041,7 +914,6 @@
 
         document.getElementById('sharedFieldSelector')?.addEventListener('change', (e) => {
             const fieldName = e.target.value;
-            console.log('[GeomPack VTK Dual Viewer DEBUG] sharedFieldSelector changed to:', fieldName);
             if (viewerLayout === 'side_by_side') {
                 // Calculate shared range from both meshes for synchronized mode
                 let sharedRange = null;
@@ -1059,35 +931,28 @@
                         const [leftMin, leftMax] = leftArray.getRange();
                         const [rightMin, rightMax] = rightArray.getRange();
                         sharedRange = [Math.min(leftMin, rightMin), Math.max(leftMax, rightMax)];
-                        console.log(`[GeomPack VTK Dual Viewer DEBUG] Calculated shared range: [${sharedRange}] from left:[${leftMin},${leftMax}] right:[${rightMin},${rightMax}]`);
                     }
                 }
 
                 if (leftPolydata) {
-                    console.log('[GeomPack VTK Dual Viewer DEBUG] Applying shared field to left mapper with shared range:', sharedRange);
                     applyFieldToMapper(leftMapper, leftPolydata, fieldName, sharedRange);
-                    console.log(`[GeomPack VTK Dual Viewer DEBUG] After left apply - scalarVis:${leftMapper.getScalarVisibility()}, hasLUT:${!!leftMapper.getLookupTable()}`);
                 }
                 if (rightPolydata) {
-                    console.log('[GeomPack VTK Dual Viewer DEBUG] Applying shared field to right mapper with shared range:', sharedRange);
                     applyFieldToMapper(rightMapper, rightPolydata, fieldName, sharedRange);
-                    console.log(`[GeomPack VTK Dual Viewer DEBUG] After right apply - scalarVis:${rightMapper.getScalarVisibility()}, hasLUT:${!!rightMapper.getLookupTable()}`);
                 }
-                console.log(`[GeomPack VTK Dual Viewer DEBUG] Before render - Left scalarVis:${leftMapper.getScalarVisibility()}, Right scalarVis:${rightMapper.getScalarVisibility()}`);
                 renderWithClippingRangeUpdate(leftRenderer, leftRenderWindow);
                 renderWithClippingRangeUpdate(rightRenderer, rightRenderWindow);
-                setTimeout(() => {
-                    console.log(`[GeomPack VTK Dual Viewer DEBUG] After render - Left scalarVis:${leftMapper.getScalarVisibility()}, Right scalarVis:${rightMapper.getScalarVisibility()}`);
-                }, 100);
             }
         });
 
         document.getElementById('colormapSelector')?.addEventListener('change', () => {
             // Reapply current field selections with new colormap
             const fieldMode = document.getElementById('fieldMode').value;
+
             if (fieldMode === 'independent') {
                 const field1 = document.getElementById('field1Selector').value;
                 const field2 = document.getElementById('field2Selector').value;
+
                 if (leftPolydata) applyFieldToMapper(leftMapper, leftPolydata, field1);
                 if (rightPolydata) applyFieldToMapper(rightMapper, rightPolydata, field2);
                 renderWithClippingRangeUpdate(leftRenderer, leftRenderWindow);

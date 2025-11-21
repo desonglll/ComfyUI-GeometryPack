@@ -6,20 +6,14 @@
 
 import { app } from "../../../scripts/app.js";
 
-console.log("[GeomPack] Loading dual mesh preview extension...");
-
 app.registerExtension({
     name: "geompack.meshpreview.dual",
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === "GeomPackPreviewMeshDual") {
-            console.log("[GeomPack] Registering Preview Mesh Dual node");
-
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function() {
                 const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
-
-                console.log("[GeomPack Dual] Node created, adding widget");
 
                 // Create container for viewer + info panel
                 const container = document.createElement("div");
@@ -59,14 +53,10 @@ app.registerExtension({
                 container.appendChild(infoPanel);
 
                 // Add widget with required options
-                console.log("[GeomPack Dual] Adding DOM widget");
-
                 const widget = this.addDOMWidget("preview_dual", "MESH_PREVIEW_DUAL", container, {
                     getValue() { return ""; },
                     setValue(v) { }
                 });
-
-                console.log("[GeomPack Dual] Widget created:", widget);
 
                 // Default widget size (will be wider for side-by-side)
                 widget.computeSize = () => [768, 640];
@@ -78,7 +68,6 @@ app.registerExtension({
                 // Track iframe load state
                 let iframeLoaded = false;
                 iframe.addEventListener('load', () => {
-                    console.log("[GeomPack Dual] Iframe loaded");
                     iframeLoaded = true;
                 });
 
@@ -95,21 +84,17 @@ app.registerExtension({
 
                 // Set initial node size
                 this.setSize([768, 640]);
-                console.log("[GeomPack Dual] Node size set to [768, 640]");
 
                 // Handle execution
                 const onExecuted = this.onExecuted;
                 this.onExecuted = function(message) {
-                    console.log("[GeomPack Dual] onExecuted called with message:", message);
                     onExecuted?.apply(this, arguments);
 
                     if (!message?.layout) {
-                        console.log("[GeomPack Dual] Missing layout in message data");
                         return;
                     }
 
                     const layout = message.layout[0];
-                    console.log(`[GeomPack Dual] Layout: ${layout}`);
 
                     let infoHTML = '';
                     let postMessageData = {
@@ -121,13 +106,11 @@ app.registerExtension({
                     if (layout === 'side_by_side') {
                         // Side-by-side mode
                         if (!message?.mesh_1_file || !message?.mesh_2_file) {
-                            console.log("[GeomPack Dual] Missing mesh files in message data");
                             return;
                         }
 
                         const filename1 = message.mesh_1_file[0];
                         const filename2 = message.mesh_2_file[0];
-                        console.log(`[GeomPack Dual] Loading meshes - Mesh 1: ${filename1}, Mesh 2: ${filename2}`);
 
                         // Update mesh info panel
                         const vertices1 = message.vertex_count_1?.[0] || 'N/A';
@@ -196,12 +179,10 @@ app.registerExtension({
                     } else {
                         // Overlay mode
                         if (!message?.mesh_file) {
-                            console.log("[GeomPack Dual] Missing mesh file in message data");
                             return;
                         }
 
                         const filename = message.mesh_file[0];
-                        console.log(`[GeomPack Dual] Loading combined mesh: ${filename}`);
 
                         // Update mesh info panel
                         const vertices1 = message.vertex_count_1?.[0] || 'N/A';
@@ -246,19 +227,14 @@ app.registerExtension({
                     // Function to send message
                     const sendMessage = () => {
                         if (iframe.contentWindow) {
-                            console.log(`[GeomPack Dual] Sending postMessage to iframe:`, postMessageData);
                             iframe.contentWindow.postMessage(postMessageData, "*");
-                        } else {
-                            console.error("[GeomPack Dual] Iframe contentWindow not available");
                         }
                     };
 
                     // Send message after iframe is loaded
                     if (iframeLoaded) {
-                        console.log("[GeomPack Dual] Iframe already loaded, sending immediately");
                         sendMessage();
                     } else {
-                        console.log("[GeomPack Dual] Waiting for iframe to load...");
                         setTimeout(sendMessage, 500);
                     }
                 };
@@ -268,5 +244,3 @@ app.registerExtension({
         }
     }
 });
-
-console.log("[GeomPack] Dual mesh preview extension registered");
