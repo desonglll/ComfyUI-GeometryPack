@@ -194,6 +194,22 @@
                     <input type="checkbox" id="showAxisIndicator"> Show Axis Indicator
                 </label>
             </div>
+            <div class="setting-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #444;">
+                <label style="font-weight: bold; color: #aaa;">Colormap Range:</label>
+            </div>
+            <div class="setting-row">
+                <label>
+                    <input type="checkbox" id="autoColorRange" checked> Auto Range
+                </label>
+            </div>
+            <div class="setting-row">
+                <label>Min:</label>
+                <input type="number" id="colormapMin" step="any" placeholder="Auto" style="width: 120px;">
+            </div>
+            <div class="setting-row">
+                <label>Max:</label>
+                <input type="number" id="colormapMax" step="any" placeholder="Auto" style="width: 120px;">
+            </div>
             <div class="button-row">
                 <button id="applySettings">Apply</button>
                 <button id="cancelSettings">Cancel</button>
@@ -226,6 +242,10 @@
             Field:
             <select id="fieldSelector"></select>
         </label>
+        <label id="colormapLabel" style="display:none;">
+            Colormap:
+            <select id="colormapSelector"></select>
+        </label>
         <button id="screenshot">Screenshot</button>
         <button id="saveMesh" style="background: #2a5a2a;">Save Mesh</button>
     </div>
@@ -242,6 +262,8 @@
         const vtkXMLPolyDataReader = vtk.IO.XML.vtkXMLPolyDataReader;
         const vtkPolyDataNormals = vtk.Filters.Core.vtkPolyDataNormals;
         const vtkInteractorStyleTrackballCamera = vtk.Interaction.Style.vtkInteractorStyleTrackballCamera;
+        const vtkColorTransferFunction = vtk.Rendering.Core.vtkColorTransferFunction;
+        const vtkColorMaps = vtk.Rendering.Core.vtkColorTransferFunction.vtkColorMaps;
         const vtkOrientationMarkerWidget = vtk.Interaction.Widgets.vtkOrientationMarkerWidget;
         const vtkAnnotatedCubeActor = vtk.Rendering.Core.vtkAnnotatedCubeActor;
 
@@ -417,6 +439,114 @@
                 // Check mesh bounds and store for camera positioning
                 meshBounds = polydata.getBounds();
                 console.log('[GeomPack VTK Viewer DEBUG] Mesh bounds:', meshBounds);
+
+                // Check for scalar fields in point data (vertex attributes)
+                const pointData = polydata.getPointData();
+                const numArrays = pointData.getNumberOfArrays();
+                console.log('[GeomPack VTK Viewer] Point data arrays:', numArrays);
+
+                // Populate scalar field selector
+                const fieldSelector = document.getElementById('fieldSelector');
+                const fieldLabel = document.getElementById('fieldLabel');
+                fieldSelector.innerHTML = '<option value="">None</option>';
+
+                if (numArrays > 0) {
+                    for (let i = 0; i < numArrays; i++) {
+                        const array = pointData.getArray(i);
+                        const arrayName = array.getName();
+                        console.log(`[GeomPack VTK Viewer] Found point field: ${arrayName}`);
+                        const option = document.createElement('option');
+                        option.value = `point:${arrayName}`;
+                        option.textContent = `${arrayName} (vertex)`;
+                        fieldSelector.appendChild(option);
+                    }
+                    fieldLabel.style.display = 'flex';
+                    console.log('[GeomPack VTK Viewer] Point data selector populated with', numArrays, 'fields');
+                }
+
+                // Check for scalar fields in cell data (face attributes)
+                const cellData = polydata.getCellData();
+                const numCellArrays = cellData.getNumberOfArrays();
+                console.log('[GeomPack VTK Viewer] Cell data arrays:', numCellArrays);
+
+                if (numCellArrays > 0) {
+                    for (let i = 0; i < numCellArrays; i++) {
+                        const array = cellData.getArray(i);
+                        const arrayName = array.getName();
+                        console.log(`[GeomPack VTK Viewer] Found face field: ${arrayName}`);
+                        const option = document.createElement('option');
+                        option.value = `cell:${arrayName}`;
+                        option.textContent = `${arrayName} (face)`;
+                        fieldSelector.appendChild(option);
+                    }
+                    fieldLabel.style.display = 'flex';
+                    console.log('[GeomPack VTK Viewer] Cell data selector populated with', numCellArrays, 'fields');
+                }
+
+                if (numArrays === 0 && numCellArrays === 0) {
+                    fieldLabel.style.display = 'none';
+                    console.log('[GeomPack VTK Viewer] No scalar fields found');
+                } else {
+                    // Auto-select first field for visualization
+                    if (numArrays > 0) {
+                        const firstArrayName = pointData.getArray(0).getName();
+                        fieldSelector.value = `point:${firstArrayName}`;
+                        console.log('[GeomPack VTK Viewer] Auto-selected first point field for visualization:', firstArrayName);
+                    } else if (numCellArrays > 0) {
+                        const firstArrayName = cellData.getArray(0).getName();
+                        fieldSelector.value = `cell:${firstArrayName}`;
+                        console.log('[GeomPack VTK Viewer] Auto-selected first cell field for visualization:', firstArrayName);
+                    }
+                }
+
+                // Populate colormap selector
+                const colormapSelector = document.getElementById('colormapSelector');
+                const colormapLabel = document.getElementById('colormapLabel');
+                if (numArrays > 0 || numCellArrays > 0) {
+                    colormapSelector.innerHTML = '';
+
+                    // Add popular colormaps first
+                    const popular = [
+                        'erdc_rainbow_bright',
+                        'Cool to Warm',
+                        'Viridis (matplotlib)',
+                        'Plasma (matplotlib)',
+                        'Inferno (matplotlib)',
+                        'Magma (matplotlib)',
+                        'jet',
+                        'rainbow'
+                    ];
+
+                    const allPresets = vtkColorMaps.rgbPresetNames;
+
+                    popular.forEach(name => {
+                        if (allPresets.includes(name)) {
+                            const option = document.createElement('option');
+                            option.value = name;
+                            option.textContent = name;
+                            if (name === 'erdc_rainbow_bright') option.selected = true;
+                            colormapSelector.appendChild(option);
+                        }
+                    });
+
+                    // Add separator
+                    const separator = document.createElement('option');
+                    separator.disabled = true;
+                    separator.textContent = '──────────';
+                    colormapSelector.appendChild(separator);
+
+                    // Add all other presets
+                    allPresets.filter(n => !popular.includes(n)).sort().forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        colormapSelector.appendChild(option);
+                    });
+
+                    colormapLabel.style.display = 'flex';
+                } else {
+                    colormapLabel.style.display = 'none';
+                }
 
                 // CRITICAL: Use proper VTK pipeline with normals filter
                 console.log('[GeomPack VTK Viewer DEBUG] Setting up VTK pipeline...');
@@ -636,6 +766,160 @@
         document.getElementById('showEdges').addEventListener('change', (e) => {
             property.setEdgeVisibility(e.target.checked);
             renderWindow.render();
+        });
+
+        // Update colormap function (reusable)
+        function updateColormap() {
+            const fieldName = document.getElementById('fieldSelector').value;
+            if (!fieldName || !currentReader) return;
+
+            const polydata = mapper.getInputData();
+            let scalarArray = null;
+
+            // Get the scalar array based on field type
+            if (fieldName.startsWith('cell:')) {
+                const actualFieldName = fieldName.substring(5);
+                const cellData = polydata.getCellData();
+                scalarArray = cellData.getArrayByName(actualFieldName);
+            } else if (fieldName.startsWith('point:')) {
+                const actualFieldName = fieldName.substring(6);
+                const pointData = polydata.getPointData();
+                scalarArray = pointData.getArrayByName(actualFieldName);
+            }
+
+            if (!scalarArray) return;
+
+            // Get selected colormap
+            const colormapName = document.getElementById('colormapSelector').value || 'erdc_rainbow_bright';
+
+            // Get color range (custom or auto)
+            const autoRange = document.getElementById('autoColorRange').checked;
+            const dataRange = scalarArray.getRange();
+            let minVal, maxVal;
+
+            if (autoRange) {
+                [minVal, maxVal] = dataRange;
+                // Update inputs to show current auto range
+                document.getElementById('colormapMin').value = minVal.toFixed(3);
+                document.getElementById('colormapMax').value = maxVal.toFixed(3);
+            } else {
+                minVal = parseFloat(document.getElementById('colormapMin').value) || dataRange[0];
+                maxVal = parseFloat(document.getElementById('colormapMax').value) || dataRange[1];
+            }
+
+            // Create and apply colormap
+            const lookupTable = vtkColorTransferFunction.newInstance();
+            const preset = vtkColorMaps.getPresetByName(colormapName);
+            lookupTable.applyColorMap(preset);
+            lookupTable.setMappingRange(minVal, maxVal);
+            lookupTable.updateRange();
+
+            mapper.setLookupTable(lookupTable);
+            renderWindow.render();
+
+            console.log(`[GeomPack VTK Viewer] Colormap '${colormapName}' applied with range [${minVal.toFixed(3)}, ${maxVal.toFixed(3)}]`);
+        }
+
+        // Field selector event handler for scalar field visualization
+        document.getElementById('fieldSelector').addEventListener('change', (e) => {
+            const fieldName = e.target.value;
+            console.log('[GeomPack VTK Viewer] Field selector changed:', fieldName);
+
+            if (fieldName && currentReader) {
+                // Get the polydata from mapper's input
+                const polydata = mapper.getInputData();
+
+                // Check if this is a cell data field (face attribute) or point data field (vertex attribute)
+                if (fieldName.startsWith('cell:')) {
+                    // Handle cell data (face attributes)
+                    const actualFieldName = fieldName.substring(5); // Remove "cell:" prefix
+                    const cellData = polydata.getCellData();
+                    const scalarArray = cellData.getArrayByName(actualFieldName);
+
+                    if (scalarArray) {
+                        // Set the scalar array as active scalars
+                        cellData.setActiveScalars(actualFieldName);
+
+                        // Configure mapper for scalar coloring using cell data
+                        mapper.setScalarVisibility(true);
+                        mapper.setScalarModeToUseCellData();
+                        mapper.setScalarRange(scalarArray.getRange());
+
+                        // Apply colormap using the updateColormap function
+                        updateColormap();
+
+                        console.log(`[GeomPack VTK Viewer] Face field '${actualFieldName}' activated, range:`, scalarArray.getRange());
+                    } else {
+                        console.warn(`[GeomPack VTK Viewer] Face field '${actualFieldName}' not found`);
+                    }
+                } else if (fieldName.startsWith('point:')) {
+                    // Handle point data (vertex attributes)
+                    const actualFieldName = fieldName.substring(6); // Remove "point:" prefix
+                    const pointData = polydata.getPointData();
+                    const scalarArray = pointData.getArrayByName(actualFieldName);
+
+                    if (scalarArray) {
+                        // Set the scalar array as active scalars
+                        pointData.setActiveScalars(actualFieldName);
+
+                        // Configure mapper for scalar coloring using point data
+                        mapper.setScalarVisibility(true);
+                        mapper.setScalarModeToUsePointData();
+                        mapper.setScalarRange(scalarArray.getRange());
+
+                        // Apply colormap using the updateColormap function
+                        updateColormap();
+
+                        console.log(`[GeomPack VTK Viewer] Vertex field '${actualFieldName}' activated, range:`, scalarArray.getRange());
+                    } else {
+                        console.warn(`[GeomPack VTK Viewer] Vertex field '${actualFieldName}' not found`);
+                    }
+                } else {
+                    console.warn(`[GeomPack VTK Viewer] Unknown field type: ${fieldName}`);
+                }
+            } else {
+                // "None" selected - disable scalar coloring, use solid color
+                mapper.setScalarVisibility(false);
+                property.setColor(1.0, 1.0, 1.0);
+                console.log('[GeomPack VTK Viewer] Scalar visualization disabled');
+            }
+
+            renderWindow.render();
+        });
+
+        // Colormap selector event handler
+        document.getElementById('colormapSelector').addEventListener('change', () => {
+            updateColormap();
+        });
+
+        // Auto range checkbox event handler
+        document.getElementById('autoColorRange').addEventListener('change', (e) => {
+            const minInput = document.getElementById('colormapMin');
+            const maxInput = document.getElementById('colormapMax');
+
+            if (e.target.checked) {
+                // Auto range enabled - disable manual inputs
+                minInput.disabled = true;
+                maxInput.disabled = true;
+                updateColormap();
+            } else {
+                // Auto range disabled - enable manual inputs
+                minInput.disabled = false;
+                maxInput.disabled = false;
+            }
+        });
+
+        // Color range input event handlers
+        document.getElementById('colormapMin').addEventListener('change', () => {
+            if (!document.getElementById('autoColorRange').checked) {
+                updateColormap();
+            }
+        });
+
+        document.getElementById('colormapMax').addEventListener('change', () => {
+            if (!document.getElementById('autoColorRange').checked) {
+                updateColormap();
+            }
         });
 
         // Camera view buttons - position camera along each axis

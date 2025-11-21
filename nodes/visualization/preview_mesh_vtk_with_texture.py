@@ -10,6 +10,12 @@ import trimesh as trimesh_module
 import os
 import tempfile
 import uuid
+import sys
+
+# Add parent directory to path to import utilities
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from _utils.mesh_ops import is_point_cloud, get_face_count, get_geometry_type
+
 
 try:
     import folder_paths
@@ -50,7 +56,7 @@ class PreviewMeshVTKWithTextureNode:
         Returns:
             dict: UI data for frontend widget
         """
-        print(f"[PreviewMeshVTKWithTexture] Preparing preview: {len(trimesh.vertices)} vertices, {len(trimesh.faces)} faces")
+        print(f"[PreviewMeshVTKWithTexture] Preparing preview: {get_geometry_type(trimesh)} - {len(trimesh.vertices)} vertices, {get_face_count(trimesh)} faces")
 
         # Check for texture/material information
         has_visual = hasattr(trimesh, 'visual') and trimesh.visual is not None
@@ -162,7 +168,7 @@ class PreviewMeshVTKWithTextureNode:
         ui_data = {
             "mesh_file": [filename],
             "vertex_count": [len(trimesh.vertices)],
-            "face_count": [len(trimesh.faces)],
+            "face_count": [get_face_count(trimesh)],
             "bounds_min": [bounds[0].tolist()],
             "bounds_max": [bounds[1].tolist()],
             "extents": [extents.tolist()],

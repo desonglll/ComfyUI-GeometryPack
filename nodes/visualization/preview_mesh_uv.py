@@ -15,6 +15,11 @@ import tempfile
 import uuid
 import json
 import numpy as np
+import sys
+
+# Add parent directory to path to import utilities
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from _utils.mesh_ops import is_point_cloud, get_face_count, get_geometry_type
 
 try:
     import folder_paths
@@ -70,7 +75,16 @@ class PreviewMeshUVNode:
         Returns:
             dict: UI data for frontend widget
         """
-        print(f"[PreviewMeshUV] Preparing preview: {len(trimesh.vertices)} vertices, {len(trimesh.faces)} faces")
+        print(f"[PreviewMeshUV] Preparing preview: {get_geometry_type(trimesh)} - {len(trimesh.vertices)} vertices, {get_face_count(trimesh)} faces")
+
+        # Point clouds don't have UVs or faces
+        if is_point_cloud(trimesh):
+            print(f"[PreviewMeshUV] Warning: UV viewing not applicable to point clouds")
+            return {
+                "ui": {
+                    "error": ["UV viewing requires a mesh with faces. This is a point cloud."]
+                }
+            }
 
         # Check for UV data
         has_uvs = False
@@ -162,7 +176,7 @@ class PreviewMeshUVNode:
         ui_data = {
             "mesh_file": [mesh_filename],
             "vertex_count": [len(trimesh.vertices)],
-            "face_count": [len(trimesh.faces)],
+            "face_count": [get_face_count(trimesh)],
             "bounds_min": [bounds[0].tolist()],
             "bounds_max": [bounds[1].tolist()],
             "extents": [extents.tolist()],

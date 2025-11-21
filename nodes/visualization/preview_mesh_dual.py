@@ -14,6 +14,12 @@ import numpy as np
 import os
 import tempfile
 import uuid
+import sys
+
+# Add parent directory to path to import utilities
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from _utils.mesh_ops import is_point_cloud, get_face_count, get_geometry_type
+
 from ._vtp_export import export_mesh_with_scalars_vtp
 
 try:
@@ -80,8 +86,8 @@ class PreviewMeshDualNode:
             dict: UI data for frontend widget
         """
         print(f"[PreviewMeshDual] Layout: {layout}")
-        print(f"[PreviewMeshDual] Mesh 1: {len(mesh_1.vertices)} vertices, {len(mesh_1.faces)} faces")
-        print(f"[PreviewMeshDual] Mesh 2: {len(mesh_2.vertices)} vertices, {len(mesh_2.faces)} faces")
+        print(f"[PreviewMeshDual] Mesh 1: {get_geometry_type(mesh_1)} - {len(mesh_1.vertices)} vertices, {get_face_count(mesh_1)} faces")
+        print(f"[PreviewMeshDual] Mesh 2: {get_geometry_type(mesh_2)} - {len(mesh_2.vertices)} vertices, {get_face_count(mesh_2)} faces")
 
         # Check for field data
         mesh_1_has_fields = has_fields(mesh_1)
@@ -109,8 +115,8 @@ class PreviewMeshDualNode:
                 "mesh_2_file": [filename_2],
                 "vertex_count_1": [len(mesh_1.vertices)],
                 "vertex_count_2": [len(mesh_2.vertices)],
-                "face_count_1": [len(mesh_1.faces)],
-                "face_count_2": [len(mesh_2.faces)],
+                "face_count_1": [get_face_count(mesh_1)],
+                "face_count_2": [get_face_count(mesh_2)],
                 "bounds_min_1": [mesh_1.bounds[0].tolist()],
                 "bounds_max_1": [mesh_1.bounds[1].tolist()],
                 "bounds_min_2": [mesh_2.bounds[0].tolist()],
@@ -142,8 +148,8 @@ class PreviewMeshDualNode:
                 "mesh_file": [filename],
                 "vertex_count_1": [len(mesh_1.vertices)],
                 "vertex_count_2": [len(mesh_2.vertices)],
-                "face_count_1": [len(mesh_1.faces)],
-                "face_count_2": [len(mesh_2.faces)],
+                "face_count_1": [get_face_count(mesh_1)],
+                "face_count_2": [get_face_count(mesh_2)],
                 "bounds_min": [combined_bounds_min.tolist()],
                 "bounds_max": [combined_bounds_max.tolist()],
                 "extents": [combined_extents.tolist()],
@@ -203,7 +209,7 @@ class PreviewMeshDualNode:
 
             export_mesh_with_scalars_vtp(combined, filepath)
             print(f"[PreviewMeshDual] Exported combined VTP: {filepath}")
-            print(f"[PreviewMeshDual] Combined mesh: {len(combined.vertices)} vertices, {len(combined.faces)} faces")
+            print(f"[PreviewMeshDual] Combined {get_geometry_type(combined)}: {len(combined.vertices)} vertices, {get_face_count(combined)} faces")
             return filename, filepath
         except Exception as e:
             print(f"[PreviewMeshDual] Failed to export combined mesh: {e}")

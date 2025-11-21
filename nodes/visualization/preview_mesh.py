@@ -9,6 +9,11 @@ import trimesh as trimesh_module
 import os
 import tempfile
 import uuid
+import sys
+
+# Add parent directory to path to import utilities
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from _utils.mesh_ops import is_point_cloud, get_face_count, get_geometry_type
 
 try:
     import folder_paths
@@ -48,7 +53,7 @@ class PreviewMeshNode:
         Returns:
             dict: UI data for frontend widget
         """
-        print(f"[PreviewMesh] Preparing preview: {len(trimesh.vertices)} vertices, {len(trimesh.faces)} faces")
+        print(f"[PreviewMesh] Preparing preview: {get_geometry_type(trimesh)} - {len(trimesh.vertices)} vertices, {get_face_count(trimesh)} faces")
 
         # Generate unique filename
         filename = f"preview_{uuid.uuid4().hex[:8]}.glb"
@@ -81,7 +86,7 @@ class PreviewMeshNode:
             "ui": {
                 "mesh_file": [filename],
                 "vertex_count": [len(trimesh.vertices)],
-                "face_count": [len(trimesh.faces)],
+                "face_count": [get_face_count(trimesh)],
                 "bounds_min": [bounds[0].tolist()],
                 "bounds_max": [bounds[1].tolist()],
                 "extents": [extents.tolist()],

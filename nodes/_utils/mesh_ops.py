@@ -29,6 +29,45 @@ except ImportError:
     print("[mesh_utils] Warning: CGAL not available. Install with: pip install cgal")
 
 
+def is_point_cloud(mesh) -> bool:
+    """
+    Check if a trimesh object is a point cloud (has no faces).
+
+    Args:
+        mesh: trimesh.Trimesh or trimesh.PointCloud object
+
+    Returns:
+        True if the object is a point cloud (no faces), False if it's a mesh with faces
+    """
+    return not (hasattr(mesh, 'faces') and mesh.faces is not None and len(mesh.faces) > 0)
+
+
+def get_face_count(mesh) -> int:
+    """
+    Safely get the number of faces from a mesh object.
+
+    Args:
+        mesh: trimesh.Trimesh or trimesh.PointCloud object
+
+    Returns:
+        Number of faces, or 0 if the object is a point cloud
+    """
+    return len(mesh.faces) if hasattr(mesh, 'faces') and mesh.faces is not None else 0
+
+
+def get_geometry_type(mesh) -> str:
+    """
+    Get a human-readable string describing the geometry type.
+
+    Args:
+        mesh: trimesh.Trimesh or trimesh.PointCloud object
+
+    Returns:
+        "Point Cloud" or "Mesh"
+    """
+    return "Point Cloud" if is_point_cloud(mesh) else "Mesh"
+
+
 def load_mesh_file(file_path: str) -> Tuple[Optional[trimesh.Trimesh], str]:
     """
     Load a mesh from file.
